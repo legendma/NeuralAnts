@@ -2,6 +2,11 @@
 Thumbs.db
 ehthumbs.db
 
+# Folders
+Debug
+ipch
+
+
 # Folder config file
 Desktop.ini
 
