@@ -2,6 +2,12 @@
 Thumbs.db
 ehthumbs.db
 
+*.suo
+*.sdf
+*.opensdf
+
+settings.manifest
+
 # Folders
 Debug
 ipch
