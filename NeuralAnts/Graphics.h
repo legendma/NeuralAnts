@@ -43,7 +43,6 @@ private:
                                                                             //                  m_raster.ReleaseAndGetAddressOf() ));
 	CD3D11_RASTERIZER_DESC                          m_raster_desc;
 	std::stack<CD3D11_RASTERIZER_DESC>              m_raster_stack;
-
 	
 	void CreateDevice();
 	void CreateResources();
