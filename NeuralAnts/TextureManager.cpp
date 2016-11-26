@@ -25,8 +25,6 @@ void TextureManager::SetTexture(const char *name)
 		LoadTexture(name);
 	}
 
-	auto device = Graphics::Instance().GetDevice();
-
 }
 
 void TextureManager::Shutdown()

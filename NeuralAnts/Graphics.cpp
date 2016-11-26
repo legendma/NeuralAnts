@@ -295,6 +295,84 @@ void Graphics::Resize(int width, int height)
 	// TODO: Game window is being resized.
 }
 
+void XM_CALLCONV Graphics::SetAmbientLightColor(FXMVECTOR value)
+{
+	m_light_color_ambient = SimpleMath::Vector4(value);
+}
+
+void XM_CALLCONV Graphics::SetFogColor(FXMVECTOR value)
+{
+	m_fog_color = SimpleMath::Vector4(value);
+}
+
+void __cdecl Graphics::SetFogEnabled(bool value)
+{
+	m_enable_fog = value;
+}
+
+void __cdecl Graphics::SetFogEnd(float value)
+{
+	m_fog_planes.second = value;
+}
+
+void __cdecl Graphics::SetFogStart(float value)
+{
+	m_fog_planes.first = value;
+}
+
+void XM_CALLCONV Graphics::SetLightDiffuseColor(int whichLight, FXMVECTOR value)
+{
+	m_direction_lights[whichLight].diffuse = SimpleMath::Vector4(value);
+}
+
+void XM_CALLCONV Graphics::SetLightDirection(int whichLight, FXMVECTOR value)
+{
+	m_direction_lights[whichLight].direction = SimpleMath::Vector4(value);
+}
+
+void XM_CALLCONV Graphics::SetLightSpecularColor(int whichLight, FXMVECTOR value)
+{
+	m_direction_lights[whichLight].specular = SimpleMath::Vector4(value);
+}
+
+void __cdecl Graphics::SetLightEnabled(int whichLight, bool value)
+{
+	m_direction_lights[whichLight].enable = value;
+
+}
+
+void __cdecl Graphics::SetLightingEnabled(bool value)
+{
+	m_enable_lighting = value;
+}
+
+void XM_CALLCONV Graphics::SetMatrices(FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection)
+{
+	SetWorld(world);
+	SetView(view);
+	SetProjection(projection);
+}
+
+void __cdecl Graphics::SetPerPixelLighting(bool value)
+{
+	m_enable_pixel_lighting = value;
+}
+
+void XM_CALLCONV Graphics::SetProjection(FXMMATRIX value)
+{
+	m_mat_projection = SimpleMath::Matrix(value);
+}
+
+void XM_CALLCONV Graphics::SetView(FXMMATRIX value)
+{
+	m_mat_view = SimpleMath::Matrix(value);
+}
+
+void XM_CALLCONV Graphics::SetWorld(FXMMATRIX value)
+{
+	m_mat_world = SimpleMath::Matrix(value);
+}
+
 void Graphics::Shutdown()
 {
 	// TODO: Add Direct3D resource cleanup here.
@@ -314,5 +392,43 @@ void Graphics::Startup()
 	CreateDevice();
 	CreateResources();
 
-	
+	m_direction_lights.reserve(IEffectLights::MaxDirectionalLights);
+}
+
+// Effects update callback procedure
+void CALLBACK Graphics::UpdateEffects(IEffect *effect)
+{
+	Graphics::Instance().__UpdateEffects(effect);
+}
+
+// Effects update callback procedure
+void Graphics::__UpdateEffects(IEffect *effect)
+{
+	/* lighting */
+	auto lights = dynamic_cast<IEffectLights*>(effect);
+	if(lights)
+	{
+		lights->SetLightingEnabled(m_enable_lighting);
+		lights->SetPerPixelLighting(m_enable_pixel_lighting);
+		lights->SetAmbientLightColor(m_light_color_ambient);
+
+		for(auto i = 0; i < (int)m_direction_lights.size(); i++)
+		{
+			auto &dir = m_direction_lights[i];
+			lights->SetLightEnabled(      i, dir.enable);
+			lights->SetLightDirection(    i, dir.direction);
+			lights->SetLightDiffuseColor( i, dir.diffuse);
+			lights->SetLightSpecularColor(i, dir.specular);
+		}
+	}
+
+	/* fog */
+	auto fog = dynamic_cast<IEffectFog*>(effect);
+	if(fog)
+	{
+		fog->SetFogEnabled(m_enable_fog);
+		fog->SetFogColor(m_fog_color);
+		fog->SetFogStart(m_fog_planes.first);
+		fog->SetFogEnd(m_fog_planes.second);
+	}
 }

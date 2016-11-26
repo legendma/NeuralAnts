@@ -32,9 +32,12 @@
 #include <wrl/client.h>
 
 #include <d3d11_1.h>
+#include <CommonStates.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
 #include <Effects.h>
+#include <Model.h>
+#include <SimpleMath.h>
 
 #include <algorithm>
 #include <exception>

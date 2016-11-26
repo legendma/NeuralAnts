@@ -41,7 +41,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		/* Start the simulation application */
 		app.Startup();
 	}
-	catch(const std::exception& e )
+	catch(const std::exception)
 	{
 		return(FAILURE);
 	}

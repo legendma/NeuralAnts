@@ -18,7 +18,6 @@ void Config::Startup()
 	m_window_size.cy = 600;
 	m_is_fullscreen = false;
 
-	auto textures = std::string("assets/textures/");
-
-	m_resource_paths.push_back(textures);
+	m_resource_paths.push_back(std::string("assets/textures/dds"));
+	m_resource_paths.push_back(std::string("assets/models/cmo"));
 }
