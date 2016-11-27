@@ -50,7 +50,6 @@
 
 namespace DX
 {
-	static const float PI = 3.1415926535897932384626433832795f;
     inline void ThrowIfFailed(HRESULT hr)
     {
         if (FAILED(hr))
@@ -127,18 +126,20 @@ public:
 
 	static std::string GetFileExtension(const std::string &str)
 	{
-		auto found = str.find_last_of(".");
-		return(str.substr(found+1));
+		char extension[_MAX_EXT];
+		_splitpath_s(str.c_str(), nullptr, 0, nullptr, 0, nullptr, 0, extension, _MAX_EXT);
+		return(std::string(extension));
 	}
 
 	static std::wstring GetFileExtension(const std::wstring &str)
 	{
-		auto found = str.find_last_of(L".");
-		return(str.substr(found + 1));
+		wchar_t extension[_MAX_EXT];
+		_wsplitpath_s(str.c_str(), nullptr, 0, nullptr, 0, nullptr, 0, extension, _MAX_EXT);
+		return(std::wstring(extension));
 	}
 
 	static float DegreesToRadians(float degrees)
 	{
-		return(DX::PI * degrees / 180.0f);
+		return(DirectX::XM_PI * degrees / 180.0f);
 	}
 };

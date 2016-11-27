@@ -66,8 +66,7 @@ void ModelManager::LoadModel(const char *name)
 	using namespace Microsoft::WRL;
 
 	auto &filename = Config::Instance().GetFileResourcePath(name);
-	/* check if model is CMO */
-	assert(Utils::GetFileExtension(filename.c_str()) == std::wstring(L"cmo"));
+	assert(Utils::GetFileExtension(filename.c_str()) == std::wstring(L".cmo"));
 
 	/* load the model */
 	auto model = Model::CreateFromCMO(Graphics::Instance().GetDevice().Get(), filename.c_str(), Graphics::Instance().GetEffectsFactory());

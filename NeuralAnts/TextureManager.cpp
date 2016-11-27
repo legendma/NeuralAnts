@@ -40,13 +40,13 @@ void TextureManager::Startup()
 	auto dds_loader = [](ID3D11Device *v1, const wchar_t *v2, ID3D11Resource**v3, ID3D11ShaderResourceView**v4) -> HRESULT { return(CreateDDSTextureFromFile(v1, v2, v3, v4)); };
 	auto wic_loader = [](ID3D11Device *v1, const wchar_t *v2, ID3D11Resource**v3, ID3D11ShaderResourceView**v4) -> HRESULT { return(CreateWICTextureFromFile(v1, v2, v3, v4)); };
 
-	m_loaders.insert(std::make_pair(std::wstring(L"dds"), dds_loader));
-	m_loaders.insert(std::make_pair(std::wstring(L"jpg"), wic_loader));
-	m_loaders.insert(std::make_pair(std::wstring(L"bmp"), wic_loader));
-	m_loaders.insert(std::make_pair(std::wstring(L"png"), wic_loader));
-	m_loaders.insert(std::make_pair(std::wstring(L"gif"), wic_loader));
-	m_loaders.insert(std::make_pair(std::wstring(L"tif"), wic_loader));
-	m_loaders.insert(std::make_pair(std::wstring(L"tff"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".dds"), dds_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".jpg"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".bmp"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".png"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".gif"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".tif"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L".tff"), wic_loader));
 }
 
 void TextureManager::LoadTexture(const char *name)

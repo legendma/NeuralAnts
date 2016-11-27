@@ -308,7 +308,7 @@ void Graphics::Resize(int width, int height)
 
 	CreateResources();
 
-	Camera::Instance().SetAspect((float)m_outputHeight / (float)m_outputWidth);
+	Camera::Instance().SetAspect((float)m_outputWidth / (float)m_outputHeight);
 
 }
 
@@ -416,7 +416,7 @@ void Graphics::Startup()
 	m_effects_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
 	m_render_states =   std::make_unique<CommonStates>(m_d3dDevice.Get());
 
-	m_raster_desc.FillMode              = D3D11_FILL_SOLID;
+	m_raster_desc.FillMode              = D3D11_FILL_WIREFRAME;
 	m_raster_desc.CullMode              = D3D11_CULL_NONE;
 	m_raster_desc.FrontCounterClockwise = FALSE;
 	m_raster_desc.DepthBias             = D3D11_DEFAULT_DEPTH_BIAS;
@@ -458,7 +458,7 @@ void Graphics::__UpdateEffects(IEffect *effect)
 			//lights->SetLightDiffuseColor( i, dir.diffuse);
 			//lights->SetLightSpecularColor(i, dir.specular);
 
-			lights->SetLightingEnabled(false);
+			lights->SetLightingEnabled(true);
 			lights->SetPerPixelLighting(true);
 			lights->SetLightEnabled(0, true);
 			lights->SetLightDiffuseColor(0, Colors::White);
@@ -471,10 +471,10 @@ void Graphics::__UpdateEffects(IEffect *effect)
 	auto fog = dynamic_cast<IEffectFog*>(effect);
 	if(fog)
 	{
-		fog->SetFogEnabled(m_enable_fog);
-		fog->SetFogColor(m_fog_color);
-		fog->SetFogStart(m_fog_planes.first);
-		fog->SetFogEnd(m_fog_planes.second);
+		//fog->SetFogEnabled(m_enable_fog);
+		//fog->SetFogColor(m_fog_color);
+		//fog->SetFogStart(m_fog_planes.first);
+		//fog->SetFogEnd(m_fog_planes.second);
 	}
 }
 

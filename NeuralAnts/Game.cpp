@@ -54,7 +54,7 @@ void Game::Render()
 
     //testing REMOVE
 	auto &camera = Camera::Instance();
-	camera.SetPosition(SimpleMath::Vector3(20.0f, 20.0f, 20.0f));
+	camera.SetPosition(SimpleMath::Vector3(2.0f, 2.0f, 2.0f));
 	camera.LookAt(SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
 
 	auto &textures = TextureManager::Instance();

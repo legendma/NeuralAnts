@@ -184,6 +184,7 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\models\cmo\cup.jpg" />
     <Image Include="directx.ico" />
   </ItemGroup>
   <ItemGroup>
