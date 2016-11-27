@@ -34,7 +34,9 @@ public:
 	CD3D11_RASTERIZER_DESC & GetRaster() { return(m_raster_desc); }
 
 	Microsoft::WRL::ComPtr<ID3D11Device> GetDevice();
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> * GetContext();
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> GetContext();
+	IEffectFactory & GetEffectsFactory();
+	CommonStates & GetRenderStates();
 
 	/* camera settings */
 	void XM_CALLCONV SetWorld(FXMMATRIX value) override;
@@ -90,13 +92,16 @@ private:
 	std::pair<float, float>                         m_fog_planes;
 
 	/* raster members */
-	Microsoft::WRL::ComPtr<ID3D10RasterizerState>   m_raster;               //DX::ThrowIfFailed(m_d3dDevice->CreateRasterizerState( &rastDesc,
-                                                                            //                  m_raster.ReleaseAndGetAddressOf() ));
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_raster;               
+                                                                            
 	CD3D11_RASTERIZER_DESC                          m_raster_desc;
 	std::stack<CD3D11_RASTERIZER_DESC>              m_raster_stack;
+	std::unique_ptr<EffectFactory>                  m_effects_factory;
+	std::unique_ptr<CommonStates>                   m_render_states;
 	
 	void CreateDevice();
 	void CreateResources();
+	void UpdateRaster();
 
 	/* not implemented */
 	void __cdecl EnableDefaultLighting() override {};

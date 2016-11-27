@@ -33,11 +33,20 @@ void TextureManager::Shutdown()
 	{
 		it.second.tex.Reset();
 	}
-
 }
 
 void TextureManager::Startup()
 {
+	auto dds_loader = [](ID3D11Device *v1, const wchar_t *v2, ID3D11Resource**v3, ID3D11ShaderResourceView**v4) -> HRESULT { return(CreateDDSTextureFromFile(v1, v2, v3, v4)); };
+	auto wic_loader = [](ID3D11Device *v1, const wchar_t *v2, ID3D11Resource**v3, ID3D11ShaderResourceView**v4) -> HRESULT { return(CreateWICTextureFromFile(v1, v2, v3, v4)); };
+
+	m_loaders.insert(std::make_pair(std::wstring(L"dds"), dds_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L"jpg"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L"bmp"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L"png"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L"gif"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L"tif"), wic_loader));
+	m_loaders.insert(std::make_pair(std::wstring(L"tff"), wic_loader));
 }
 
 void TextureManager::LoadTexture(const char *name)
@@ -45,46 +54,17 @@ void TextureManager::LoadTexture(const char *name)
 	using namespace DirectX;
 	using namespace Microsoft::WRL;
 
-	auto texture = ComPtr < ID3D11ShaderResourceView >();
-	auto &paths = Config::Instance().GetResourcePaths();
-	auto found_it = false;
-
-	/* check if texture is DDS */
-	auto name_str = std::string(name);
-	auto is_dds = Utils::GetFileExtension(name_str) == std::string("dds");
+	auto texture   = ComPtr < ID3D11ShaderResourceView >();
+	auto &filename = Config::Instance().GetFileResourcePath(name);
 	
 	ComPtr<ID3D11Resource> resource;
-	for(auto it : paths)
-	{
-		auto full_name = Utils::ToWide( it + name_str );
-		auto result = S_OK;
-		if(is_dds)
-		{
-			result = CreateDDSTextureFromFile(Graphics::Instance().GetDevice().Get(), full_name.c_str(), resource.GetAddressOf(), texture.ReleaseAndGetAddressOf());
-		}
-		else
-		{
-			result = CreateWICTextureFromFile(Graphics::Instance().GetDevice().Get(), full_name.c_str(), resource.GetAddressOf(), texture.ReleaseAndGetAddressOf());
-		}
-
-		if(SUCCEEDED(result))
-		{
-			found_it = true;
-			break;
-		}
-	}
-	
-	if(!found_it)
-	{
-		throw std::exception();
-	}
+	m_loaders[Utils::GetFileExtension(Utils::ToWide(name))](Graphics::Instance().GetDevice().Get(), filename.c_str(), resource.GetAddressOf(), texture.ReleaseAndGetAddressOf());
 
 	/* Get the texture descriptor */
 	ComPtr<ID3D11Texture2D> texture2d;
 	DX::ThrowIfFailed(resource.As(&texture2d));
 	CD3D11_TEXTURE2D_DESC desc;
 	texture2d->GetDesc(&desc);
-	
 
 	/* create the record and add to our loaded list */
 	TextureRecord record;

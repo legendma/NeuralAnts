@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Application.h"
+#include "Camera.h"
 #include "Graphics.h"
 
 Graphics::Graphics() :
@@ -243,9 +244,24 @@ void Graphics::CreateResources()
     // TODO: Initialize windows-size dependent objects here.
 }
 
+Microsoft::WRL::ComPtr<ID3D11DeviceContext> Graphics::GetContext()
+{
+	return(m_d3dContext);
+}
+
 Microsoft::WRL::ComPtr<ID3D11Device> Graphics::GetDevice()
 {
 	return(m_d3dDevice);
+}
+
+IEffectFactory & Graphics::GetEffectsFactory()
+{
+	return(*m_effects_factory);
+}
+
+CommonStates & Graphics::GetRenderStates()
+{
+	return(*m_render_states);
 }
 
 void Graphics::PopRaster()
@@ -287,12 +303,13 @@ void Graphics::Reset()
 
 void Graphics::Resize(int width, int height)
 {
-	m_outputWidth  = std::max(width, 1);
+	m_outputWidth  = std::max(width,  1);
 	m_outputHeight = std::max(height, 1);
 
 	CreateResources();
 
-	// TODO: Game window is being resized.
+	Camera::Instance().SetAspect((float)m_outputHeight / (float)m_outputWidth);
+
 }
 
 void XM_CALLCONV Graphics::SetAmbientLightColor(FXMVECTOR value)
@@ -376,7 +393,9 @@ void XM_CALLCONV Graphics::SetWorld(FXMMATRIX value)
 void Graphics::Shutdown()
 {
 	// TODO: Add Direct3D resource cleanup here.
-
+	m_effects_factory.reset();
+	m_render_states.reset();
+	m_raster.Reset();
 	m_depthStencilView.Reset();
 	m_renderTargetView.Reset();
 	m_swapChain1.Reset();
@@ -393,6 +412,25 @@ void Graphics::Startup()
 	CreateResources();
 
 	m_direction_lights.reserve(IEffectLights::MaxDirectionalLights);
+
+	m_effects_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
+	m_render_states =   std::make_unique<CommonStates>(m_d3dDevice.Get());
+
+	m_raster_desc.FillMode              = D3D11_FILL_SOLID;
+	m_raster_desc.CullMode              = D3D11_CULL_NONE;
+	m_raster_desc.FrontCounterClockwise = FALSE;
+	m_raster_desc.DepthBias             = D3D11_DEFAULT_DEPTH_BIAS;
+	m_raster_desc.DepthBiasClamp        = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
+	m_raster_desc.SlopeScaledDepthBias  = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	m_raster_desc.DepthClipEnable       = TRUE;
+	m_raster_desc.ScissorEnable         = FALSE;
+	m_raster_desc.MultisampleEnable     = FALSE;
+	m_raster_desc.AntialiasedLineEnable = FALSE;
+
+	UpdateRaster(); 
+
+	Camera::Instance().SetFOV(Utils::DegreesToRadians(70.0f));
+
 }
 
 // Effects update callback procedure
@@ -415,10 +453,17 @@ void Graphics::__UpdateEffects(IEffect *effect)
 		for(auto i = 0; i < (int)m_direction_lights.size(); i++)
 		{
 			auto &dir = m_direction_lights[i];
-			lights->SetLightEnabled(      i, dir.enable);
-			lights->SetLightDirection(    i, dir.direction);
-			lights->SetLightDiffuseColor( i, dir.diffuse);
-			lights->SetLightSpecularColor(i, dir.specular);
+			//lights->SetLightEnabled(      i, dir.enable);
+			//lights->SetLightDirection(    i, dir.direction);
+			//lights->SetLightDiffuseColor( i, dir.diffuse);
+			//lights->SetLightSpecularColor(i, dir.specular);
+
+			lights->SetLightingEnabled(false);
+			lights->SetPerPixelLighting(true);
+			lights->SetLightEnabled(0, true);
+			lights->SetLightDiffuseColor(0, Colors::White);
+			lights->SetLightEnabled(1, false);
+			lights->SetLightEnabled(2, false);
 		}
 	}
 
@@ -431,4 +476,9 @@ void Graphics::__UpdateEffects(IEffect *effect)
 		fog->SetFogStart(m_fog_planes.first);
 		fog->SetFogEnd(m_fog_planes.second);
 	}
+}
+
+void Graphics::UpdateRaster()
+{
+	DX::ThrowIfFailed(m_d3dDevice->CreateRasterizerState(&m_raster_desc, m_raster.ReleaseAndGetAddressOf()));
 }

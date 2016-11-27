@@ -50,6 +50,7 @@
 
 namespace DX
 {
+	static const float PI = 3.1415926535897932384626433832795f;
     inline void ThrowIfFailed(HRESULT hr)
     {
         if (FAILED(hr))
@@ -128,5 +129,16 @@ public:
 	{
 		auto found = str.find_last_of(".");
 		return(str.substr(found+1));
+	}
+
+	static std::wstring GetFileExtension(const std::wstring &str)
+	{
+		auto found = str.find_last_of(L".");
+		return(str.substr(found + 1));
+	}
+
+	static float DegreesToRadians(float degrees)
+	{
+		return(DX::PI * degrees / 180.0f);
 	}
 };

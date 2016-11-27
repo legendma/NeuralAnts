@@ -34,6 +34,11 @@ void Game::Update(DX::StepTimer const& timer)
     elapsedTime;
 }
 
+// TESTING REMOVE //////////
+	#include "TextureManager.h"
+    #include "ModelManager.h"
+	#include "Camera.h"
+// TESTING REMOVE //////////
 // Draws the scene.
 void Game::Render()
 {
@@ -47,7 +52,19 @@ void Game::Render()
 	
 	graphics.Clear();
 
-    // TODO: Add your rendering code here.
+    //testing REMOVE
+	auto &camera = Camera::Instance();
+	camera.SetPosition(SimpleMath::Vector3(20.0f, 20.0f, 20.0f));
+	camera.LookAt(SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
+
+	auto &textures = TextureManager::Instance();
+	textures.SetTexture("grass.dds");
+
+	auto &models = ModelManager::Instance();
+	models.SetModel("woodencup.cmo");
+//	models.SetModel("cup.cmo");
+	models.DrawModel(SimpleMath::Vector3(0.0f, 0.0f, 0.0f), 1.0f, 0.0f, 0.0f, 0.0f);
+
 
     graphics.Present();
 }
@@ -56,9 +73,10 @@ void Game::ResetElapsedTime()
 {
 	m_timer.ResetElapsedTime();
 }
-
 void Game::Startup()
 {
+	//testing REMOVE
+	//TextureManager::Instance().SetTexture("grass.dds");
 }
 
 void Game::Shutdown()
