@@ -21,7 +21,9 @@ public:
 	void Startup();
 
 private:
-	TextureMap             m_textures;
+	typedef HRESULT(*load_proc)(ID3D11Device*, const wchar_t*, ID3D11Resource**, ID3D11ShaderResourceView**);
+	TextureMap                                    m_textures;
+	std::map < std::wstring, load_proc >          m_loaders;
 
 	void LoadTexture(const char *name);
 };

@@ -9,7 +9,7 @@ public:
 	~Config();
 
 	void Startup();
-	const ResourcePaths & GetResourcePaths() const { return(m_resource_paths); }
+	const std::wstring GetFileResourcePath(const char *name) const;
 	SIZE GetDefaultWindowSize() const { return(m_window_size); }
 	bool GetFullscreen() const { return(m_is_fullscreen); }
 

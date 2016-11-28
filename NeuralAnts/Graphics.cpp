@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Application.h"
+#include "Camera.h"
 #include "Graphics.h"
 
 Graphics::Graphics() :
@@ -7,11 +8,30 @@ Graphics::Graphics() :
 	m_outputHeight(600),
 	m_featureLevel(D3D_FEATURE_LEVEL_9_1)
 {
+    m_raster_desc.FillMode              = D3D11_FILL_SOLID;
+	m_raster_desc.CullMode              = D3D11_CULL_NONE;
+	m_raster_desc.FrontCounterClockwise = FALSE;
+	m_raster_desc.DepthBias             = D3D11_DEFAULT_DEPTH_BIAS;
+	m_raster_desc.DepthBiasClamp        = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
+	m_raster_desc.SlopeScaledDepthBias  = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	m_raster_desc.DepthClipEnable       = TRUE;
+	m_raster_desc.ScissorEnable         = FALSE;
+	m_raster_desc.MultisampleEnable     = FALSE;
+	m_raster_desc.AntialiasedLineEnable = FALSE;
+
+	m_direction_lights.reserve(IEffectLights::MaxDirectionalLights);
+	m_msaa_enabled = false;
+	m_msaa_quality = 1;
 }
 
 
 Graphics::~Graphics()
 {
+}
+
+void Graphics::BeginDraw()
+{
+	m_d3dContext->RSSetState(m_raster.Get());
 }
 
 // Helper method to clear the back buffers.
@@ -127,12 +147,12 @@ void Graphics::CreateResources()
     m_depthStencilView.Reset();
     m_d3dContext->Flush();
 
-    UINT backBufferWidth = static_cast<UINT>(m_outputWidth);
-    UINT backBufferHeight = static_cast<UINT>(m_outputHeight);
-    DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+    UINT backBufferWidth          = static_cast<UINT>(m_outputWidth);
+    UINT backBufferHeight         = static_cast<UINT>(m_outputHeight);
+    DXGI_FORMAT backBufferFormat  = DXGI_FORMAT_B8G8R8A8_UNORM;
     DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    UINT backBufferCount = 2;
-	HWND hWindow = Application::Instance().GetWindowHandle();
+    UINT backBufferCount          = 2;
+	HWND hWindow                  = Application::Instance().GetWindowHandle();
 
 	if(!hWindow)
 	{
@@ -180,13 +200,13 @@ void Graphics::CreateResources()
 
             // Create a descriptor for the swap chain.
             DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
-            swapChainDesc.Width = backBufferWidth;
-            swapChainDesc.Height = backBufferHeight;
-            swapChainDesc.Format = backBufferFormat;
-            swapChainDesc.SampleDesc.Count = 1;
+            swapChainDesc.Width              = backBufferWidth;
+            swapChainDesc.Height             = backBufferHeight;
+            swapChainDesc.Format             = backBufferFormat;
+            swapChainDesc.SampleDesc.Count   = m_msaa_quality;
             swapChainDesc.SampleDesc.Quality = 0;
-            swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            swapChainDesc.BufferCount = backBufferCount;
+            swapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            swapChainDesc.BufferCount        = backBufferCount;
 
             DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = { 0 };
             fsSwapChainDesc.Windowed = TRUE;
@@ -206,15 +226,15 @@ void Graphics::CreateResources()
         else
         {
             DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
-            swapChainDesc.BufferCount = backBufferCount;
-            swapChainDesc.BufferDesc.Width = backBufferWidth;
-            swapChainDesc.BufferDesc.Height = backBufferHeight;
-            swapChainDesc.BufferDesc.Format = backBufferFormat;
-            swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-			swapChainDesc.OutputWindow = hWindow;
-            swapChainDesc.SampleDesc.Count = 1;
+            swapChainDesc.BufferCount        = backBufferCount;
+            swapChainDesc.BufferDesc.Width   = backBufferWidth;
+            swapChainDesc.BufferDesc.Height  = backBufferHeight;
+            swapChainDesc.BufferDesc.Format  = backBufferFormat;
+            swapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+			swapChainDesc.OutputWindow       = hWindow;
+            swapChainDesc.SampleDesc.Count   = m_msaa_quality;
             swapChainDesc.SampleDesc.Quality = 0;
-            swapChainDesc.Windowed = TRUE;
+            swapChainDesc.Windowed           = TRUE;
 
             DX::ThrowIfFailed(dxgiFactory->CreateSwapChain(m_d3dDevice.Get(), &swapChainDesc, m_swapChain.ReleaseAndGetAddressOf()));
         }
@@ -232,15 +252,25 @@ void Graphics::CreateResources()
 
     // Allocate a 2-D surface as the depth/stencil buffer and
     // create a DepthStencil view on this surface to use on bind.
-    CD3D11_TEXTURE2D_DESC depthStencilDesc(depthBufferFormat, backBufferWidth, backBufferHeight, 1, 1, D3D11_BIND_DEPTH_STENCIL);
+	CD3D11_TEXTURE2D_DESC depthStencilDesc(depthBufferFormat, backBufferWidth, backBufferHeight, 1, 1, D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_msaa_quality, 0);
 
     ComPtr<ID3D11Texture2D> depthStencil;
     DX::ThrowIfFailed(m_d3dDevice->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
 
-    CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
+	auto dimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	if(m_msaa_enabled)
+	{
+		dimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	}
+	CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(dimension);
     DX::ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, m_depthStencilView.ReleaseAndGetAddressOf()));
 
     // TODO: Initialize windows-size dependent objects here.
+}
+
+Microsoft::WRL::ComPtr<ID3D11DeviceContext> Graphics::GetContext()
+{
+	return(m_d3dContext);
 }
 
 Microsoft::WRL::ComPtr<ID3D11Device> Graphics::GetDevice()
@@ -248,11 +278,22 @@ Microsoft::WRL::ComPtr<ID3D11Device> Graphics::GetDevice()
 	return(m_d3dDevice);
 }
 
+IEffectFactory & Graphics::GetEffectsFactory()
+{
+	return(*m_effects_factory);
+}
+
+CommonStates & Graphics::GetCommonRenderStates()
+{
+	return(*m_common_states);
+}
+
 void Graphics::PopRaster()
 {
 	assert(m_raster_stack.size());
 	m_raster_desc = m_raster_stack.top();
 	m_raster_stack.pop();
+	UpdateRaster();
 }
 
 // Presents the back buffer contents to the screen.
@@ -287,18 +328,128 @@ void Graphics::Reset()
 
 void Graphics::Resize(int width, int height)
 {
-	m_outputWidth  = std::max(width, 1);
+	m_outputWidth  = std::max(width,  1);
 	m_outputHeight = std::max(height, 1);
 
 	CreateResources();
 
-	// TODO: Game window is being resized.
+	Camera::Instance().SetAspect((float)m_outputWidth / (float)m_outputHeight);
+
+}
+
+void XM_CALLCONV Graphics::SetAmbientLightColor(FXMVECTOR value)
+{
+	m_light_color_ambient = SimpleMath::Vector4(value);
+}
+
+void XM_CALLCONV Graphics::SetFogColor(FXMVECTOR value)
+{
+	m_fog_color = SimpleMath::Vector4(value);
+}
+
+void __cdecl Graphics::SetFogEnabled(bool value)
+{
+	m_enable_fog = value;
+}
+
+void __cdecl Graphics::SetFogEnd(float value)
+{
+	m_fog_planes.second = value;
+}
+
+void __cdecl Graphics::SetFogStart(float value)
+{
+	m_fog_planes.first = value;
+}
+
+void XM_CALLCONV Graphics::SetLightDiffuseColor(int whichLight, FXMVECTOR value)
+{
+	m_direction_lights[whichLight].diffuse = SimpleMath::Vector4(value);
+}
+
+void XM_CALLCONV Graphics::SetLightDirection(int whichLight, FXMVECTOR value)
+{
+	m_direction_lights[whichLight].direction = SimpleMath::Vector4(value);
+}
+
+void XM_CALLCONV Graphics::SetLightSpecularColor(int whichLight, FXMVECTOR value)
+{
+	m_direction_lights[whichLight].specular = SimpleMath::Vector4(value);
+}
+
+void __cdecl Graphics::SetLightEnabled(int whichLight, bool value)
+{
+	m_direction_lights[whichLight].enable = value;
+
+}
+
+void __cdecl Graphics::SetLightingEnabled(bool value)
+{
+	m_enable_lighting = value;
+}
+
+void XM_CALLCONV Graphics::SetMatrices(FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection)
+{
+	SetWorld(world);
+	SetView(view);
+	SetProjection(projection);
+}
+
+void Graphics::SetMSAA(bool enable, int quality)
+{
+	m_msaa_enabled = enable;
+	m_msaa_quality = quality;
+
+	m_raster_desc.MultisampleEnable = enable;
+	UpdateRaster();
+	if(!enable)
+	{
+		m_msaa_quality = 1;
+	}
+
+	Reset();
+}
+
+void __cdecl Graphics::SetPerPixelLighting(bool value)
+{
+	m_enable_pixel_lighting = value;
+}
+
+void XM_CALLCONV Graphics::SetProjection(FXMMATRIX value)
+{
+	m_mat_projection = SimpleMath::Matrix(value);
+}
+
+void XM_CALLCONV Graphics::SetView(FXMMATRIX value)
+{
+	m_mat_view = SimpleMath::Matrix(value);
+}
+
+void Graphics::SetWireframe(bool enable)
+{
+	if(enable)
+	{
+		m_raster_desc.FillMode = D3D11_FILL_WIREFRAME;
+	}
+	else
+	{
+		m_raster_desc.FillMode = D3D11_FILL_SOLID;
+	}
+
+	UpdateRaster();
+}
+
+void XM_CALLCONV Graphics::SetWorld(FXMMATRIX value)
+{
+	m_mat_world = SimpleMath::Matrix(value);
 }
 
 void Graphics::Shutdown()
 {
 	// TODO: Add Direct3D resource cleanup here.
-
+	m_effects_factory.reset();
+	m_common_states.reset();
+	m_raster.Reset();
 	m_depthStencilView.Reset();
 	m_renderTargetView.Reset();
 	m_swapChain1.Reset();
@@ -311,8 +462,65 @@ void Graphics::Shutdown()
 
 void Graphics::Startup()
 {
+	Camera::Instance().SetFOV(Utils::DegreesToRadians(70.0f));
+	
 	CreateDevice();
 	CreateResources();
 
-	
+	m_effects_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
+	m_common_states =   std::make_unique<CommonStates>(m_d3dDevice.Get());
+
+	UpdateRaster(); 
+
+}
+
+// Effects update callback procedure
+void CALLBACK Graphics::UpdateEffects(IEffect *effect)
+{
+	Graphics::Instance().__UpdateEffects(effect);
+}
+
+// Effects update callback procedure
+void Graphics::__UpdateEffects(IEffect *effect)
+{
+	/* lighting */
+	auto lights = dynamic_cast<IEffectLights*>(effect);
+	if(lights)
+	{
+		lights->SetLightingEnabled(m_enable_lighting);
+		lights->SetPerPixelLighting(m_enable_pixel_lighting);
+		lights->SetAmbientLightColor(m_light_color_ambient);
+
+		for(auto i = 0; i < (int)m_direction_lights.size(); i++)
+		{
+			auto &dir = m_direction_lights[i];
+			//lights->SetLightEnabled(      i, dir.enable);
+			//lights->SetLightDirection(    i, dir.direction);
+			//lights->SetLightDiffuseColor( i, dir.diffuse);
+			//lights->SetLightSpecularColor(i, dir.specular);
+
+			lights->SetLightingEnabled(true);
+			lights->SetPerPixelLighting(true);
+			lights->SetLightEnabled(0, true);
+			lights->SetLightDiffuseColor(0, Colors::White);
+			lights->SetLightEnabled(1, false);
+			lights->SetLightEnabled(2, false);
+		}
+	}
+
+	/* fog */
+	auto fog = dynamic_cast<IEffectFog*>(effect);
+	if(fog)
+	{
+		//fog->SetFogEnabled(m_enable_fog);
+		//fog->SetFogColor(m_fog_color);
+		//fog->SetFogStart(m_fog_planes.first);
+		//fog->SetFogEnd(m_fog_planes.second);
+	}
+}
+
+void Graphics::UpdateRaster()
+{
+	DX::ThrowIfFailed(m_d3dDevice->CreateRasterizerState(&m_raster_desc, m_raster.ReleaseAndGetAddressOf()));
+	m_d3dContext->RSSetState(m_raster.Get());
 }

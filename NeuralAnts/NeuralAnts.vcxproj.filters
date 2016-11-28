@@ -14,6 +14,8 @@
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="ModelManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -23,12 +25,17 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="ModelManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="assets\models\cmo\cup.jpg">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

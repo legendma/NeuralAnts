@@ -32,8 +32,12 @@
 #include <wrl/client.h>
 
 #include <d3d11_1.h>
+#include <CommonStates.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
+#include <Effects.h>
+#include <Model.h>
+#include <SimpleMath.h>
 
 #include <algorithm>
 #include <exception>
@@ -122,7 +126,20 @@ public:
 
 	static std::string GetFileExtension(const std::string &str)
 	{
-		auto found = str.find_last_of(".");
-		return(str.substr(found+1));
+		char extension[_MAX_EXT];
+		_splitpath_s(str.c_str(), nullptr, 0, nullptr, 0, nullptr, 0, extension, _MAX_EXT);
+		return(std::string(extension));
+	}
+
+	static std::wstring GetFileExtension(const std::wstring &str)
+	{
+		wchar_t extension[_MAX_EXT];
+		_wsplitpath_s(str.c_str(), nullptr, 0, nullptr, 0, nullptr, 0, extension, _MAX_EXT);
+		return(std::wstring(extension));
+	}
+
+	static float DegreesToRadians(float degrees)
+	{
+		return(DirectX::XM_PI * degrees / 180.0f);
 	}
 };

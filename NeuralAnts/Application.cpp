@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "Application.h"
+#include "Config.h"
 #include "Game.h"
 #include "Graphics.h"
-#include "Config.h"
+#include "ModelManager.h"
 #include "TextureManager.h"
 
 
@@ -132,6 +133,7 @@ void Application::Shutdown()
 	/* Shutdown the services */
 	Game::Instance().Shutdown();
 	TextureManager::Instance().Shutdown();
+	ModelManager::Instance().Shutdown();
 	Graphics::Instance().Shutdown();
 }
 
@@ -140,10 +142,8 @@ void Application::Startup()
 	/* Start the services */
 	Graphics::Instance().Startup();
 	TextureManager::Instance().Startup();
+	ModelManager::Instance().Startup();
 	Game::Instance().Startup();
-
-	//testing REMOVE
-	TextureManager::Instance().SetTexture("grass.dds");
 }
 
 // Windows procedure

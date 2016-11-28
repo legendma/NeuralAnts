@@ -1,28 +1,69 @@
 #pragma once
 
-class Graphics : public Singleton<Graphics>
+using namespace DirectX;
+
+typedef struct
+{
+	
+	bool                   enable;
+	SimpleMath::Vector4    direction;
+	SimpleMath::Vector4    diffuse;
+	SimpleMath::Vector4    specular;
+} Light;
+
+class Graphics : public Singleton<Graphics>, public IEffectMatrices, public IEffectLights, public IEffectFog
 {
 	friend class Singleton < Graphics > ;
-	Graphics();
-
 public:
+	Graphics();
 	~Graphics();
 
+	void BeginDraw();
 	void Clear();
-	void PopRaster();
 	void Present();
-	void PushRaster();
 	void Shutdown();
 	void Startup();
 	void Reset();
 	void Resize(int width, int height);
 
-	/* raster operations */
-	CD3D11_RASTERIZER_DESC & GetRaster() { return(m_raster_desc); }
+	static void CALLBACK UpdateEffects(IEffect *effect);
+	void __UpdateEffects(IEffect *effect);
 
+	/* raster operations */
+	void PushRaster();
+	void PopRaster();
+	void SetWireframe(bool enable = true);
 
 	Microsoft::WRL::ComPtr<ID3D11Device> GetDevice();
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> * GetContext();
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> GetContext();
+	IEffectFactory & GetEffectsFactory();
+	CommonStates & GetCommonRenderStates();
+
+	/* multi-sample anti-aliasing */
+    void SetMSAA(bool enable, int quality);
+
+	/* camera settings */
+	void XM_CALLCONV SetWorld(FXMMATRIX value) override;
+	void XM_CALLCONV SetView(FXMMATRIX value) override;
+	void XM_CALLCONV SetProjection(FXMMATRIX value) override;
+	void XM_CALLCONV SetMatrices(FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection) override;
+
+	/* light settings */
+	void __cdecl SetLightingEnabled(bool value) override;
+	void __cdecl SetPerPixelLighting(bool value) override;
+	void XM_CALLCONV SetAmbientLightColor(FXMVECTOR value) override;
+
+	void __cdecl SetLightEnabled(int whichLight, bool value) override;
+	void XM_CALLCONV SetLightDirection(int whichLight, FXMVECTOR value) override;
+	void XM_CALLCONV SetLightDiffuseColor(int whichLight, FXMVECTOR value) override;
+	void XM_CALLCONV SetLightSpecularColor(int whichLight, FXMVECTOR value) override;
+
+	/* fog settings */
+	void __cdecl SetFogEnabled(bool value) override;
+	void __cdecl SetFogStart(float value) override;
+	void __cdecl SetFogEnd(float value) override;
+	void XM_CALLCONV SetFogColor(FXMVECTOR value) override;
+
 
 private:
 	D3D_FEATURE_LEVEL                               m_featureLevel;
@@ -38,14 +79,39 @@ private:
 	int                                             m_outputWidth;
 	int                                             m_outputHeight;
 
+	/* multi-sample anti-aliasing */
+	bool                                            m_msaa_enabled;
+	int                                             m_msaa_quality;
+
+	/* camera properties */
+	SimpleMath::Matrix                              m_mat_world;
+	SimpleMath::Matrix                              m_mat_view;
+	SimpleMath::Matrix                              m_mat_projection;
+
+	/* lighting properties */
+	bool                                            m_enable_lighting;
+	bool                                            m_enable_pixel_lighting;
+	SimpleMath::Vector4                             m_light_color_ambient;
+	std::vector<Light>                              m_direction_lights;
+
+	/* fog properties */
+	bool                                            m_enable_fog;
+	SimpleMath::Vector4                             m_fog_color;
+	std::pair<float, float>                         m_fog_planes;
+
 	/* raster members */
-	Microsoft::WRL::ComPtr<ID3D10RasterizerState>   m_raster;               //DX::ThrowIfFailed(m_d3dDevice->CreateRasterizerState( &rastDesc,
-                                                                            //                  m_raster.ReleaseAndGetAddressOf() ));
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_raster;               
+                                                                            
 	CD3D11_RASTERIZER_DESC                          m_raster_desc;
 	std::stack<CD3D11_RASTERIZER_DESC>              m_raster_stack;
-
+	std::unique_ptr<EffectFactory>                  m_effects_factory;
+	std::unique_ptr<CommonStates>                   m_common_states;
 	
 	void CreateDevice();
 	void CreateResources();
+	void UpdateRaster();
+
+	/* not implemented */
+	void __cdecl EnableDefaultLighting() override {};
 };
 
