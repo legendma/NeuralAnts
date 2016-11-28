@@ -54,18 +54,24 @@ void Game::Render()
 
     //testing REMOVE
 	auto &camera = Camera::Instance();
-	camera.SetPosition(SimpleMath::Vector3(2.0f, 2.0f, 2.0f));
+	camera.SetPosition(SimpleMath::Vector3(2.0f, 3.0f, 2.0f));
 	camera.LookAt(SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
 
-	auto &textures = TextureManager::Instance();
-	textures.SetTexture("grass.dds");
+	//auto &textures = TextureManager::Instance();
+	//textures.SetTexture("grass.dds");
 
 	auto &models = ModelManager::Instance();
 	models.SetModel("woodencup.cmo");
-//	models.SetModel("cup.cmo");
-	models.DrawModel(SimpleMath::Vector3(0.0f, 0.0f, 0.0f), 1.0f, 0.0f, 0.0f, 0.0f);
 
+	//graphics.PushRaster();
+	//graphics.SetWireframe();
+	models.DrawModel(SimpleMath::Vector3(-0.5f, 0.0f, 0.0f), 1.0f, 0.0f, 0.0f, 0.0f);
+	//graphics.PopRaster();
 
+	models.SetModel("cup.cmo");
+	models.DrawModel(SimpleMath::Vector3(0.5f, -0.5f, 0.0f), 2.0f, 0.0f, 0.0f, 0.0f);
+
+	// testing END
     graphics.Present();
 }
 
@@ -77,6 +83,7 @@ void Game::Startup()
 {
 	//testing REMOVE
 	//TextureManager::Instance().SetTexture("grass.dds");
+	Graphics::Instance().SetMSAA(true, 8);
 }
 
 void Game::Shutdown()

@@ -31,7 +31,11 @@ void ModelManager::DrawModel(SimpleMath::Vector3 position, float scale, float x_
 	auto world = translate * rotation * uniform_scale;
 
 	m_current_model->UpdateEffects(Graphics::UpdateEffects);
-	m_current_model->Draw(graphics.GetContext().Get(), graphics.GetRenderStates(), world, camera.GetView(), camera.GetProjection());
+	m_current_model->Draw(graphics.GetContext().Get(), graphics.GetCommonRenderStates(), world, camera.GetView(), camera.GetProjection(), false, [](void)
+	    {
+		    Graphics::Instance().BeginDraw();
+	    }
+	);
 }
 
 void ModelManager::SetModel(const char *name)

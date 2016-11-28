@@ -18,10 +18,9 @@ public:
 	Graphics();
 	~Graphics();
 
+	void BeginDraw();
 	void Clear();
-	void PopRaster();
 	void Present();
-	void PushRaster();
 	void Shutdown();
 	void Startup();
 	void Reset();
@@ -31,12 +30,17 @@ public:
 	void __UpdateEffects(IEffect *effect);
 
 	/* raster operations */
-	CD3D11_RASTERIZER_DESC & GetRaster() { return(m_raster_desc); }
+	void PushRaster();
+	void PopRaster();
+	void SetWireframe(bool enable = true);
 
 	Microsoft::WRL::ComPtr<ID3D11Device> GetDevice();
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> GetContext();
 	IEffectFactory & GetEffectsFactory();
-	CommonStates & GetRenderStates();
+	CommonStates & GetCommonRenderStates();
+
+	/* multi-sample anti-aliasing */
+    void SetMSAA(bool enable, int quality);
 
 	/* camera settings */
 	void XM_CALLCONV SetWorld(FXMMATRIX value) override;
@@ -75,6 +79,10 @@ private:
 	int                                             m_outputWidth;
 	int                                             m_outputHeight;
 
+	/* multi-sample anti-aliasing */
+	bool                                            m_msaa_enabled;
+	int                                             m_msaa_quality;
+
 	/* camera properties */
 	SimpleMath::Matrix                              m_mat_world;
 	SimpleMath::Matrix                              m_mat_view;
@@ -97,7 +105,7 @@ private:
 	CD3D11_RASTERIZER_DESC                          m_raster_desc;
 	std::stack<CD3D11_RASTERIZER_DESC>              m_raster_stack;
 	std::unique_ptr<EffectFactory>                  m_effects_factory;
-	std::unique_ptr<CommonStates>                   m_render_states;
+	std::unique_ptr<CommonStates>                   m_common_states;
 	
 	void CreateDevice();
 	void CreateResources();
